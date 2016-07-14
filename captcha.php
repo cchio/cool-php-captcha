@@ -503,7 +503,7 @@ class SimpleCaptcha {
      * File generation
      */
     protected function WriteImage($answer = "", $x=0) {
-        $outFolderCount = floor($x/1000);
+        $outFolderCount = floor($x/10000);
         $outFolder = "data-select-" . sprintf('%02d', $outFolderCount) . "/";
         $outFilename = sprintf('%04d', $x) . "-" . $answer;
         if (!file_exists($outFolder)) {
