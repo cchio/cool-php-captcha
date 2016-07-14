@@ -1,3 +1,5 @@
+#!/usr/bin/env php
+
 <?php
 /**
  * Script para la generación de CAPTCHAS
@@ -11,7 +13,7 @@
  */
 
 
-session_start();
+// session_start();
 
 
 
@@ -20,9 +22,9 @@ $captcha = new SimpleCaptcha();
 
 
 // OPTIONAL Change configuration...
-//$captcha->wordsFile = 'words/es.php';
+$captcha->wordsFile = null;
 //$captcha->session_var = 'secretword';
-//$captcha->imageFormat = 'png';
+// $captcha->imageFormat = 'png';
 //$captcha->lineWidth = 3;
 //$captcha->scale = 3; $captcha->blur = true;
 //$captcha->resourcesPath = "/var/cool-php-captcha/resources";
@@ -37,11 +39,20 @@ if (!empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
     }
 }
 */
-
-
+if ($argc > 1) {
+    $count = (int)$argv[1];
+} else {
+    $count = 1;
+}
 
 // Image generation
-$captcha->CreateImage();
+
+for ($x = 0; $x < $count; $x++) {
+    if ($x > 0 && $x % 1000 == 0) {
+        print "Generated " . $x . " out of " . $count . " captchas\n";
+    }
+    $captcha->CreateImage($x);
+} 
 
 
 
@@ -96,7 +107,7 @@ class SimpleCaptcha {
     public $resourcesPath = 'resources';
 
     /** Min word length (for non-dictionary random text generation) */
-    public $minWordLength = 5;
+    public $minWordLength = 6;
 
     /**
      * Max word length (for non-dictionary random text generation)
@@ -104,7 +115,7 @@ class SimpleCaptcha {
      * Used for dictionary words indicating the word-length
      * for font-size modification purposes
      */
-    public $maxWordLength = 8;
+    public $maxWordLength = 6;
 
     /** Sessionname to store the original text */
     public $session_var = 'captcha';
@@ -114,9 +125,9 @@ class SimpleCaptcha {
 
     /** Foreground colors in RGB-array */
     public $colors = array(
-        array(27,78,181), // blue
-        array(22,163,35), // green
-        array(214,36,7),  // red
+        array(0,0,0), // blue
+        array(0,0,0), // green
+        array(0,0,0),  // red
     );
 
     /** Shadow color in RGB-array or null */
@@ -135,14 +146,14 @@ class SimpleCaptcha {
      */
     public $fonts = array(
         'Antykwa'  => array('spacing' => -3, 'minSize' => 27, 'maxSize' => 30, 'font' => 'AntykwaBold.ttf'),
-        'Candice'  => array('spacing' =>-1.5,'minSize' => 28, 'maxSize' => 31, 'font' => 'Candice.ttf'),
-        'DingDong' => array('spacing' => -2, 'minSize' => 24, 'maxSize' => 30, 'font' => 'Ding-DongDaddyO.ttf'),
-        'Duality'  => array('spacing' => -2, 'minSize' => 30, 'maxSize' => 38, 'font' => 'Duality.ttf'),
-        'Heineken' => array('spacing' => -2, 'minSize' => 24, 'maxSize' => 34, 'font' => 'Heineken.ttf'),
-        'Jura'     => array('spacing' => -2, 'minSize' => 28, 'maxSize' => 32, 'font' => 'Jura.ttf'),
-        'StayPuft' => array('spacing' =>-1.5,'minSize' => 28, 'maxSize' => 32, 'font' => 'StayPuft.ttf'),
-        'Times'    => array('spacing' => -2, 'minSize' => 28, 'maxSize' => 34, 'font' => 'TimesNewRomanBold.ttf'),
-        'VeraSans' => array('spacing' => -1, 'minSize' => 20, 'maxSize' => 28, 'font' => 'VeraSansBold.ttf'),
+        // 'Candice'  => array('spacing' =>-1.5,'minSize' => 28, 'maxSize' => 31, 'font' => 'Candice.ttf'),
+        // 'DingDong' => array('spacing' => -2, 'minSize' => 24, 'maxSize' => 30, 'font' => 'Ding-DongDaddyO.ttf'),
+        // 'Duality'  => array('spacing' => -2, 'minSize' => 30, 'maxSize' => 38, 'font' => 'Duality.ttf'),
+        // 'Heineken' => array('spacing' => -2, 'minSize' => 24, 'maxSize' => 34, 'font' => 'Heineken.ttf'),
+        // 'Jura'     => array('spacing' => -2, 'minSize' => 28, 'maxSize' => 32, 'font' => 'Jura.ttf'),
+        // 'StayPuft' => array('spacing' =>-1.5,'minSize' => 28, 'maxSize' => 32, 'font' => 'StayPuft.ttf'),
+        // 'Times'    => array('spacing' => -2, 'minSize' => 28, 'maxSize' => 34, 'font' => 'TimesNewRomanBold.ttf'),
+        // 'VeraSans' => array('spacing' => -1, 'minSize' => 20, 'maxSize' => 28, 'font' => 'VeraSansBold.ttf'),
     );
 
     /** Wave configuracion in X and Y axes */
@@ -152,7 +163,7 @@ class SimpleCaptcha {
     public $Xamplitude = 5;
 
     /** letter rotation clockwise */
-    public $maxRotation = 8;
+    public $maxRotation = 5;
 
     /**
      * Internal image size factor (for better image quality)
@@ -171,7 +182,6 @@ class SimpleCaptcha {
     
     /** Image format: jpeg or png */
     public $imageFormat = 'jpeg';
-
 
     /** GD image */
     public $im;
@@ -194,7 +204,7 @@ class SimpleCaptcha {
 
 
 
-    public function CreateImage() {
+    public function CreateImage($x=0) {
         $ini = microtime(true);
 
         /** Initialization */
@@ -227,7 +237,7 @@ class SimpleCaptcha {
 
 
         /** Output */
-        $this->WriteImage();
+        $this->WriteImage($text, $x);
         $this->Cleanup();
     }
 
@@ -245,7 +255,7 @@ class SimpleCaptcha {
     protected function ImageAllocate() {
         // Cleanup
         if (!empty($this->im)) {
-            imagedestroy($this->im);
+            // imagedestroy($this->im);
         }
 
         $this->im = imagecreatetruecolor($this->width*$this->scale, $this->height*$this->scale);
@@ -305,17 +315,12 @@ class SimpleCaptcha {
         }
 
         $words  = "abcdefghijlmnopqrstvwyz";
-        $vocals = "aeiou";
+        // $vocals = "aeiou";
 
         $text  = "";
-        $vocal = rand(0, 1);
+        // $vocal = rand(0, 1);
         for ($i=0; $i<$length; $i++) {
-            if ($vocal) {
-                $text .= substr($vocals, mt_rand(0, 4), 1);
-            } else {
-                $text .= substr($words, mt_rand(0, 22), 1);
-            }
-            $vocal = !$vocal;
+            $text .= substr($words, mt_rand(0, 22), 1);
         }
         return $text;
     }
@@ -497,13 +502,19 @@ class SimpleCaptcha {
     /**
      * File generation
      */
-    protected function WriteImage() {
+    protected function WriteImage($answer = "", $x=0) {
+        $outFolderCount = floor($x/1000);
+        $outFolder = "data-select-" . sprintf('%02d', $outFolderCount) . "/";
+        $outFilename = sprintf('%04d', $x) . "-" . $answer;
+        if (!file_exists($outFolder)) {
+            mkdir($outFolder, 0777, true);
+        }
         if ($this->imageFormat == 'png' && function_exists('imagepng')) {
-            header("Content-type: image/png");
-            imagepng($this->im);
+            // header("Content-type: image/png");
+            imagepng($this->im, $outFolder . $outFilename . ".png");
         } else {
-            header("Content-type: image/jpeg");
-            imagejpeg($this->im, null, 80);
+            // header("Content-type: image/jpeg");
+            imagejpeg($this->im, $outFolder . $outFilename . ".jpg", 80);
         }
     }
 
